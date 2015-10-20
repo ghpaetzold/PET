@@ -10,15 +10,6 @@
  */
 package pet.frontend;
 
-import java.awt.event.MouseEvent;
-import javax.swing.event.CaretEvent;
-import pet.frontend.components.UnitGUI;
-import pet.frontend.components.AbstractUnitGUI;
-import pet.frontend.components.EditableUnitGUI;
-import pet.frontend.components.NonEditableUnitGUI;
-import pet.frontend.menu.PopupMenuFactory;
-import java.awt.event.MouseWheelEvent;
-import pet.frontend.util.MyUndoableEditListener;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -29,7 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.util.ArrayList;
@@ -37,6 +28,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.BoundedRangeModel;
@@ -47,11 +40,14 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.joda.time.DateTime;
 import pet.annotation.AssessmentChoice;
@@ -62,22 +58,28 @@ import pet.annotation.adapter.StatusAdapter;
 import pet.config.ContextHandler;
 import pet.constraints.LengthConstraintEditingListener;
 import pet.constraints.UnconstrainedEditingListener;
+import pet.frontend.components.AbstractUnitGUI;
+import pet.frontend.components.EditableUnitGUI;
+import pet.frontend.components.NonEditableUnitGUI;
+import pet.frontend.components.UnitGUI;
 import pet.frontend.menu.AbstractPopupMouseAdapter;
 import pet.frontend.menu.DeleteActionListener;
 import pet.frontend.menu.InsertActionListener;
+import pet.frontend.menu.PopupMenuFactory;
 import pet.frontend.menu.ShiftActionListener;
 import pet.frontend.menu.TrimActionListener;
-import pet.frontend.util.DragFromTextHandler;
 import pet.frontend.util.DragFromAndDropToTextHandler;
+import pet.frontend.util.DragFromTextHandler;
+import pet.frontend.util.MyUndoableEditListener;
 import pet.frontend.util.WaitingUntilPostEditingStarts;
 import pet.io.XMLJobWriter;
+import pet.search.SearchManager;
+import pet.search.SearchResult;
 import pet.signal.PETCommandEvent;
 import pet.signal.PETCursorEvent;
-import pet.signal.PETEditOperationEvent;
 import pet.signal.PETFlowEvent;
 import pet.signal.PETKeystrokeEvent;
 import pet.signal.PETNavigationEvent;
-import pet.signal.SignalAdapter;
 import pet.usr.adapter.AssessmentListener;
 import pet.usr.adapter.AssessmentSelector;
 import pet.usr.adapter.CurrentPrinter;
@@ -146,22 +148,25 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     private final List<WaitingUntilPostEditingStarts> waitingPEStart;
     private final PopupMenuFactory menuFactory;
     private final List<MultiKey> scrollers;
+    private WordSearchPage wsp;
 
     /**
-     * This class is quite big and underplanned 
-     * so expect to find all kind of bad programming practices here.
-     * I'll try to slowly improve it.
-     * 
+     * This class is quite big and underplanned so expect to find all kind of
+     * bad programming practices here. I'll try to slowly improve it.
+     *
      * @param job
      * @param editableTasks
      * @param userSpaceController
-     * @param timeStamped 
+     * @param timeStamped
      */
     public BorderLayoutAnnotationPage(final Job job,
             final List<EditableUnit> editableTasks,
             final UserSpaceController userSpaceController,
             final boolean timeStamped) {
         initComponents();
+
+        this.wsp = new WordSearchPage(this);
+
         this.waitingPEStart = new ArrayList<WaitingUntilPostEditingStarts>();
 
         this.setExtendedState(this.getExtendedState() | JFrame.MAXIMIZED_BOTH);
@@ -186,18 +191,16 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         } else {
             this.tasks = new ArrayList<EditableUnit>(editableTasks);
         }
-        this.pool = new TaskPool(this.tasks, sentencesByPage, editablePosition);
+        this.pool = new TaskPool(this.getTasks(), sentencesByPage, getEditablePosition());
 
         // customizes visual stuff
         alignments = new HashMap<Integer, MultiKey>(sentencesByPage);
-
 
         initPanels();
         final MultiKey editable = alignments.get(editablePosition);
         editingId = (JLabel) editable.getKey(0);
         editingSrc = (UnitGUI) editable.getKey(1);
         editingTgt = (UnitGUI) editable.getKey(2);
-
 
         this.statusController = new EditionStatusController(lblStatus,
                 lblPartialTime,
@@ -209,24 +212,21 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 editingTgt,
                 lblGeneralInfo,
                 currentId,
-                txtContext,
-                pool,
-                tasks.size(),
+                txtContext, getPool(),
+                getTasks().size(),
                 txtSInfo.underlying(),
                 txtTInfo.underlying());
         lastSave = statusController.getDone();
 
-        printer = new TaskPrinter(pool,
-                alignments,
+        printer = new TaskPrinter(getPool(), getAlignments(),
                 new CurrentPrinter(
-                currentId,
-                txtContext,
-                btnAcceptMT,
-                btnCopyContext,
-                lblEditionNumber,
-                lblPartialTime,
-                lblTotalTime),
-                editablePosition);
+                        currentId,
+                        txtContext,
+                        btnAcceptMT,
+                        btnCopyContext,
+                        lblEditionNumber,
+                        lblPartialTime,
+                        lblTotalTime), getEditablePosition());
         printer.print();
 
         if (!ContextHandler.lengthConstraints().isEmpty()) {
@@ -251,33 +251,30 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         statusController.update();
         updateProgress();
 
-
         ((JPanel) this.getContentPane()).getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_S,
                 Event.CTRL_MASK), new AbstractAction() {
 
-            public void actionPerformed(ActionEvent ae) {
-                saveProgress(false);
-            }
-        });
+                    public void actionPerformed(ActionEvent ae) {
+                        saveProgress(false);
+                    }
+                });
 
         /*this.addMouseMotionListener(new MouseMotionListener() {
         
-        @Override
-        public void mouseDragged(MouseEvent me) {
+         @Override
+         public void mouseDragged(MouseEvent me) {
         
-        }
+         }
         
-        @Override
-        public void mouseMoved(MouseEvent me) {
-        int mouseX= me.getX();
-        int mouseY= me.getY();
-        System.out.println(mouseX + "," + mouseY);
-        }
-        });*/
-
+         @Override
+         public void mouseMoved(MouseEvent me) {
+         int mouseX= me.getX();
+         int mouseY= me.getY();
+         System.out.println(mouseX + "," + mouseY);
+         }
+         });*/
         findBestStartPosition();
         btnNext.requestFocusInWindow();
-
 
     }
 
@@ -290,7 +287,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void updateProgress() {
         final int done = statusController.getDone();
-        lblProgress.setText(done + "/" + tasks.size());
+        lblProgress.setText(done + "/" + getTasks().size());
         lblSaving.setForeground(GREEN);
         lblSaving.setText(lastSave + " saved");
     }
@@ -304,9 +301,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     private void initPanels() {
-
-
-
         final EditableUnitGUI.Tip showProducer = ContextHandler.showProducer();
         currentId.setFont(ContextHandler.idFont());
 
@@ -390,7 +384,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         //      txtMTPreview.addMouseListener(menuFactory.buildTargetMenu("context", false));
         //  }
 
-
         final JPanel topFirstRowPanelFirstHalf = new JPanel(new GridLayout(1, 0, 1, 1));
         final JPanel topFirstRowPanelSecondHalf = new JPanel(new GridLayout(1, 0, 1, 1));
         topFirstRowPanel.add(topFirstRowPanelFirstHalf);
@@ -404,7 +397,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         topFirstRowPanelSecondHalf.add(lblTotalTime);
         topRightPanel.add(lblProgress, BorderLayout.CENTER);
         topRightPanel.add(lblSaving, BorderLayout.SOUTH);
-
 
         // THIS IS THE PAGE'S CENTER
         final JPanel centerPanel = new JPanel();
@@ -456,8 +448,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         bottomCenterPanel.add(leftScroll);
         bottomCenterPanel.add(rigthScroll);
 
-
-
         final Font font = ContextHandler.standardFont();
         final Color color = ContextHandler.standardBackGroundColor();
         final boolean showId = ContextHandler.showSentenceId();
@@ -480,7 +470,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         AbstractPopupMouseAdapter tgtMenu = menuFactory.buildTargetMenu("target", false);
         AbstractPopupMouseAdapter activeTgtMenu = menuFactory.buildTargetMenu("target-active", true);
 
-
         final DragFromTextHandler dragHandler = new DragFromTextHandler();
         final DragFromAndDropToTextHandler dragAndDropHandler = new DragFromAndDropToTextHandler();
 
@@ -495,8 +484,8 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         for (int i = 0; i < sentencesByPage; i++) {
 
             //final AbstractUnitGUI src = (i == editablePosition) ? new EditableUnitGUI(showProducer, UnitGUI.UnitGUIType.SOURCE, 0) : new NonEditableUnitGUI(showProducer, UnitGUI.UnitGUIType.SOURCE, i-editablePosition);
-            final AbstractUnitGUI src = new NonEditableUnitGUI(showProducer, UnitGUI.UnitGUIType.SOURCE, i - editablePosition);
-            final AbstractUnitGUI tgt = (i == editablePosition) ? new EditableUnitGUI(showProducer, UnitGUI.UnitGUIType.TARGET, 0) : new NonEditableUnitGUI(showProducer, UnitGUI.UnitGUIType.TARGET, i - editablePosition);
+            final AbstractUnitGUI src = new NonEditableUnitGUI(showProducer, UnitGUI.UnitGUIType.SOURCE, i - getEditablePosition());
+            final AbstractUnitGUI tgt = (i == getEditablePosition()) ? new EditableUnitGUI(showProducer, UnitGUI.UnitGUIType.TARGET, 0) : new NonEditableUnitGUI(showProducer, UnitGUI.UnitGUIType.TARGET, i - getEditablePosition());
 
             if (ContextHandler.renderHTML()) {
                 src.setContentType("text/html");
@@ -526,13 +515,12 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             src.setTransferHandler(dragHandler);
             src.setDragEnabled(true);
 
-            if (i == editablePosition) {
+            if (i == getEditablePosition()) {
                 src.addMouseListener(activeSrcMenu);
                 tgt.addMouseListener(activeTgtMenu);
 
                 tgt.setTransferHandler(dragAndDropHandler);
                 tgt.setDragEnabled(true);
-
 
                 tgt.setEditable(true);
                 tgt.setFont(ContextHandler.editableFont());
@@ -592,123 +580,123 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R,
                         Event.CTRL_MASK), new AbstractAction() {
 
-                    private final ActionListener listener = new InsertActionListener();
+                            private final ActionListener listener = new InsertActionListener();
 
-                    public void actionPerformed(ActionEvent ae) {
-                        listener.actionPerformed(ae);
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                listener.actionPerformed(ae);
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_I,
                         Event.CTRL_MASK), new AbstractAction() {
 
-                    private final ActionListener listener = new InsertActionListener();
+                            private final ActionListener listener = new InsertActionListener();
 
-                    public void actionPerformed(ActionEvent ae) {
-                        listener.actionPerformed(ae);
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                listener.actionPerformed(ae);
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D,
                         Event.CTRL_MASK), new AbstractAction() {
 
-                    private final ActionListener listener = new DeleteActionListener();
+                            private final ActionListener listener = new DeleteActionListener();
 
-                    public void actionPerformed(ActionEvent ae) {
-                        listener.actionPerformed(ae);
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                listener.actionPerformed(ae);
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S,
                         Event.CTRL_MASK), new AbstractAction() {
 
-                    private final ActionListener listener = new ShiftActionListener();
+                            private final ActionListener listener = new ShiftActionListener();
 
-                    public void actionPerformed(ActionEvent ae) {
-                        listener.actionPerformed(ae);
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                listener.actionPerformed(ae);
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T,
                         Event.CTRL_MASK), new AbstractAction() {
 
-                    private final ActionListener listener = new TrimActionListener();
+                            private final ActionListener listener = new TrimActionListener();
 
-                    public void actionPerformed(ActionEvent ae) {
-                        listener.actionPerformed(ae);
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                listener.actionPerformed(ae);
+                            }
+                        });
 
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_N,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnNext.requestFocusInWindow();
-                        btnNext.doClick();
-                        editingTgt.underlying().requestFocus();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnNext.requestFocusInWindow();
+                                btnNext.doClick();
+                                editingTgt.underlying().requestFocus();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnNext.requestFocusInWindow();
-                        btnNext.doClick();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnNext.requestFocusInWindow();
+                                btnNext.doClick();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnPrevious.requestFocusInWindow();
-                        btnPrevious.doClick();
-                        editingTgt.underlying().requestFocus();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnPrevious.requestFocusInWindow();
+                                btnPrevious.doClick();
+                                editingTgt.underlying().requestFocus();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnPrevious.requestFocusInWindow();
-                        btnPrevious.doClick();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnPrevious.requestFocusInWindow();
+                                btnPrevious.doClick();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnCopyContext.doClick();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnCopyContext.doClick();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        if (btnAcceptMT.isEnabled()) {
-                            btnNext.requestFocusInWindow();
-                            btnAcceptMT.doClick();
-                        }
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                if (btnAcceptMT.isEnabled()) {
+                                    btnNext.requestFocusInWindow();
+                                    btnAcceptMT.doClick();
+                                }
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnRevert.doClick();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnRevert.doClick();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnNext.requestFocusInWindow();
-                        btnImpossible.doClick();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnNext.requestFocusInWindow();
+                                btnImpossible.doClick();
+                            }
+                        });
                 inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_B,
                         Event.ALT_MASK), new AbstractAction() {
 
-                    public void actionPerformed(ActionEvent ae) {
-                        btnBind.doClick();
-                        editingTgt.underlying().requestFocus();
-                    }
-                });
+                            public void actionPerformed(ActionEvent ae) {
+                                btnBind.doClick();
+                                editingTgt.underlying().requestFocus();
+                            }
+                        });
 
             } else {
                 src.addMouseListener(srcMenu);
@@ -716,8 +704,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 tgt.setTransferHandler(dragHandler);
                 tgt.setDragEnabled(true);
             }
-
-
 
             if (displayST) {
                 if (nColumns == 2) {
@@ -731,7 +717,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 }
             }
             idPanel.add(id);
-            alignments.put(i, new MultiKey(id, src, tgt));
+            getAlignments().put(i, new MultiKey(id, src, tgt));
 
         }
         initTools();
@@ -763,14 +749,12 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         btnClose.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/quit.png"))); // NOI18N
         btnClose.setToolTipText("Close (ALT+F4)");
 
-
         btnCopyContext.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/copy.gif")));
         btnCopyContext.setToolTipText("Copy text from the top box to the editing box (C)");
         btnAcceptMT.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/accept2.png")));
         btnAcceptMT.setToolTipText("Accept the MT (A)");
         btnRevert.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/copy.png")));
         btnRevert.setToolTipText("Revert to last revision (R)");
-
 
         btnImpossible.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/bin.png")));
         btnImpossible.setToolTipText("Discard unit (D)");
@@ -900,13 +884,13 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private boolean previous(boolean continuous) {
         if (continuous) {
-            if (pool.moveBackward()) {
+            if (getPool().moveBackward()) {
                 printer.print();
                 statusController.update();
                 return true;
             }
         } else {
-            pool.findPreviousTaskToDo();
+            getPool().findPreviousTaskToDo();
             printer.print();
             statusController.update();
             return true;
@@ -917,13 +901,13 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     private boolean next(final boolean continuous) {
         boolean status = false;
         if (continuous) {
-            if (pool.moveForward()) {
+            if (getPool().moveForward()) {
                 printer.print();
                 statusController.update();
                 status = true;
             }
         } else {
-            pool.findNextTaskToDo();
+            getPool().findNextTaskToDo();
             printer.print();
             statusController.update();
             status = true;
@@ -955,7 +939,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                         this,
                         AssessmentSelector.getSummary(snapshot),
                         selected);
-                
+
                 dialog.setVisible(true);
             }
             ContextHandler.signalManager().fire(new PETFlowEvent(PETFlowEvent.ActionType.ASSESSING_END));
@@ -975,18 +959,19 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         assessments.addAll(chosen);
     }
 
-    private boolean move(final boolean forward, final boolean continuous) {
-        final EditableUnit editing = (EditableUnit) pool.getPool().get(editablePosition);
+    public boolean move(final boolean forward, final boolean continuous) {
+        final EditableUnit editing = (EditableUnit) getPool().getPool().get(getEditablePosition());
         if (editing != null) { // there is a task
             if (statusController.getEditionStatus() == EditionStatus.EDITING) { //it's being edited
                 ContextHandler.flowManager().editingIsAboutToFinish();
                 if (canSave()) { // it can be saved
                     final EditableUnit snapshot = getSnapshot(editing);
                     getAssessment(snapshot);
-                    statusController.done(snapshot.getTarget().toString(),
-                            assessments);
+                    statusController.done(snapshot.getTarget().toString(), assessments);
                     ContextHandler.flowManager().editingHasFinished();
                     boolean opResult = false;
+                    //Update the search results:
+                    this.wsp.updateSearch();
                     if (forward) {
                         opResult = next(continuous);
                     } else {
@@ -1001,11 +986,20 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 }
             }
         }
+        boolean result;
         if (forward) {
-            return next(continuous);
+            result = next(continuous);
         } else {
-            return previous(continuous);
+            result = previous(continuous);
         }
+
+        //If search is open, highlight the editable unit:
+        if (this.wsp.isVisible()) {
+            this.highlightEditableUnit();
+        }
+
+        //Return result:
+        return result;
     }
 
     private boolean canSave() {
@@ -1044,7 +1038,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     private void writeXMLTaskResults(final boolean auto) {
-        
+
         final int done = statusController.getDone();
         if (!auto || done > 0) {
             String suffix = "";
@@ -1054,7 +1048,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             final String fileName = makeOutputFileName(suffix);
             final File file = new File(fileName);
             final XMLJobWriter writer = new XMLJobWriter();
-            writer.save(job, statusController.getJobStatus(), statusController.getDone(), tasks, file);
+            writer.save(job, statusController.getJobStatus(), statusController.getDone(), getTasks(), file);
             if ((done - autoSaveMemory) > 0) {
                 new File(makeOutputFileName('.' + Integer.toString(done - autoSaveMemory))).delete();
             }
@@ -1063,8 +1057,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void saveProgress(boolean auto) {
         lblSaving.setText("saving...");
-        writeXMLTaskResults(
-                auto);
+        writeXMLTaskResults(auto);
         lastSave = statusController.getDone();
         lblSaving.setForeground(GREEN);
         lblSaving.setText("<html>" + lastSave + " saved<br>" + new DateTime(System.currentTimeMillis()).toString("hh:mm:ss") + "</html>");
@@ -1082,47 +1075,55 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     private void toolbarKeyPressed(java.awt.event.KeyEvent evt) {
-        if (evt.getKeyCode() == KeyEvent.VK_I) {
-            editingTgt.underlying().requestFocusInWindow();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_DOWN) {
-            btnNext.doClick();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_UP) {
-            btnPrevious.doClick();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_HOME) {
-            btnPreviousLast.doClick();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_END) {
-            btnNextUndone.doClick();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_F10) {
-            btnSave.doClick();
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_C) {
-            if (btnCopyContext.isEnabled()) {
-                btnCopyContext.doClick();
+        if (evt.isControlDown()) {
+            if (evt.getKeyCode() == KeyEvent.VK_F) {
+                wsp.setFocusable(true);
+                wsp.setFocusableWindowState(true);
+                wsp.setVisible(true);
             }
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_A) {
-            if (btnAcceptMT.isEnabled()) {
-                btnAcceptMT.doClick();
+        } else {
+            if (evt.getKeyCode() == KeyEvent.VK_I) {
+                editingTgt.underlying().requestFocusInWindow();
             }
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_R) {
-            if (btnRevert.isEnabled()) {
-                btnRevert.doClick();
+            if (evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                btnNext.doClick();
             }
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_D) {
-            if (btnImpossible.isEnabled()) {
-                btnImpossible.doClick();
+            if (evt.getKeyCode() == KeyEvent.VK_UP) {
+                btnPrevious.doClick();
             }
-        }
-        if (evt.getKeyCode() == KeyEvent.VK_B) {
-            if (btnBind.isEnabled()) {
-                btnBind.doClick();
+            if (evt.getKeyCode() == KeyEvent.VK_HOME) {
+                btnPreviousLast.doClick();
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_END) {
+                btnNextUndone.doClick();
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_F10) {
+                btnSave.doClick();
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_C) {
+                if (btnCopyContext.isEnabled()) {
+                    btnCopyContext.doClick();
+                }
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_A) {
+                if (btnAcceptMT.isEnabled()) {
+                    btnAcceptMT.doClick();
+                }
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_R) {
+                if (btnRevert.isEnabled()) {
+                    btnRevert.doClick();
+                }
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_D) {
+                if (btnImpossible.isEnabled()) {
+                    btnImpossible.doClick();
+                }
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_B) {
+                if (btnBind.isEnabled()) {
+                    btnBind.doClick();
+                }
             }
         }
     }
@@ -1236,9 +1237,10 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     /**
-     * Here we treat some of the relevant keystrokes.
-     * Mostly the normal visible characters, but also delete and backspace (without ctrl) and TAB.
-     * @param evt 
+     * Here we treat some of the relevant keystrokes. Mostly the normal visible
+     * characters, but also delete and backspace (without ctrl) and TAB.
+     *
+     * @param evt
      */
     private void tgtSentenceKeyTyped(java.awt.event.KeyEvent evt) {
         final int offset = editingTgt.underlying().getCaretPosition();
@@ -1263,10 +1265,12 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     /**
-     * Here we treat some other keystrokes, be careful not to count things twice!
-     * Here we treat the ctrl+ events as well as navigation without ctrl.
-     * Navigation with ctrl for while is not distinguished, but it could be in the future.
-     * @param evt 
+     * Here we treat some other keystrokes, be careful not to count things
+     * twice! Here we treat the ctrl+ events as well as navigation without ctrl.
+     * Navigation with ctrl for while is not distinguished, but it could be in
+     * the future.
+     *
+     * @param evt
      */
     private void tgtSentenceKeyPressed(java.awt.event.KeyEvent evt) {
         final int offset = editingTgt.underlying().getCaretPosition();
@@ -1338,6 +1342,9 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 case KeyEvent.VK_PAGE_UP:
                     ContextHandler.signalManager().fire(new PETNavigationEvent(PETNavigationEvent.NavigationType.PGUP, offset));
                     break;
+                case KeyEvent.VK_ENTER:
+                    this.btnNext.doClick();
+                    break;
             }
         }
     }
@@ -1364,7 +1371,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             if (saveUnit == JOptionPane.YES_OPTION) {
                 move(true, true);
             }
-
         }
         if (!autoSave) {
             int option = JOptionPane.showConfirmDialog(this, "Would you like to save your progress?", "Closing", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
@@ -1384,10 +1390,10 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
     //@SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -1421,8 +1427,65 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             }
         });
 
-
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+
+    /**
+     * @return the tasks
+     */
+    public List<EditableUnit> getTasks() {
+        return tasks;
+    }
+
+    /**
+     * @return the pool
+     */
+    public TaskPool getPool() {
+        return pool;
+    }
+
+    /**
+     * @return the alignments
+     */
+    public Map<Integer, MultiKey> getAlignments() {
+        return alignments;
+    }
+
+    /**
+     * @return the editablePosition
+     */
+    public int getEditablePosition() {
+        return editablePosition;
+    }
+
+    private void highlightEditableUnit() {
+        //Get editable unit:
+        AbstractUnitGUI editable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(2);
+
+        //Get search results from map:
+        SearchResult result = this.wsp.getSearchManager().getSearchResult(this.pool.getPointer());
+
+        //Get current search:
+        String search = this.wsp.getSearchManager().getCurrentSearch();
+
+        //Get highlighter:
+        Highlighter highlighter = editable.getHighlighter();
+        Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+
+        //If there are search results, highlight them:
+        if (result != null) {
+            //Get occurrence indexes:
+            ArrayList<Integer> indexes = result.getIndexes();
+
+            //Higlight each occurrence:
+            for (Integer i : indexes) {
+                try {
+                    highlighter.addHighlight(i, i + search.length(), painter);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(SearchManager.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
 }

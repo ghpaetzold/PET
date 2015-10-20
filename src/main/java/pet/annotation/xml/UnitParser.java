@@ -27,8 +27,7 @@ import pet.annotation.adapter.TranslationUnit;
  */
 public class UnitParser {
 
-    public static Element toXML(final Document xml,
-            final EditableUnit unit, final List<UnitResult> results) {
+    public static Element toXML(final Document xml, final EditableUnit unit, final List<UnitResult> results) {
         final Element xmlUnit = xml.createElement(ParseHandler.UNIT);
         xmlUnit.setAttribute(ParseHandler.ID, unit.getId());
         xmlUnit.setAttribute(ParseHandler.STATUS, unit.getStatus().toString());

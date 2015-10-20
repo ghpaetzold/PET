@@ -139,4 +139,8 @@ public class TaskPool implements RollingPool<Unit>, EditingUnitSelector, UnitPro
     public List<Unit> getUnits() {
         return Collections.unmodifiableList(tasks);
     }
+
+    public int getPointer() {
+        return pointer;
+    }
 }

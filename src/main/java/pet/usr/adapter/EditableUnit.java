@@ -169,8 +169,7 @@ public class EditableUnit implements pet.annotation.Unit {
         return unit.getAttributes();
     }
 
-    public boolean changeSentence(final String edited,
-            final List<AssessmentChoice> assessments) {
+    public boolean changeSentence(final String edited, final List<AssessmentChoice> assessments) {
         if (getStatus() == StatusAdapter.STARTED) {
             ContextHandler.signalManager().fire(SignalAdapter.DONE);
             editing = editing.consolidate(new StringSentence(type, edited, getUpdatedProducer()));

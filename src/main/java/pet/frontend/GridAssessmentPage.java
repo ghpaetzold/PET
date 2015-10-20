@@ -13,6 +13,8 @@ package pet.frontend;
 import pet.frontend.util.MyFocusTraversalPolicy;
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import pet.usr.adapter.AssessmentListener;
 import java.util.ArrayList;
 
@@ -46,6 +48,29 @@ public class GridAssessmentPage extends javax.swing.JDialog {
     private final List<JComponent> combos;
     private final List<JTextPane> comments;
     private boolean done = false;
+    
+    private class GridAssessmentKeyListener implements KeyListener{
+
+        private GridAssessmentPage page;
+        
+        public GridAssessmentKeyListener(GridAssessmentPage gap) {
+            this.page = gap;
+        }
+
+        @Override
+        public void keyTyped(KeyEvent e) {}
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(e.getKeyCode()==KeyEvent.VK_ENTER){
+                this.page.btnFinish.doClick();
+            }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {}
+        
+    }
 
     /** Creates new form AssessmentPane */
     public GridAssessmentPage(java.awt.Frame parent,
@@ -98,10 +123,13 @@ public class GridAssessmentPage extends javax.swing.JDialog {
                 answers = new JList(descriptor.getAnswers().toArray());
                 ((JList) answers).setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             }
+            answers.addKeyListener(new GridAssessmentKeyListener(this));
             combos.add(answers);
-            body.add(new JScrollPane(answers,
+            JScrollPane answersPanel = new JScrollPane(answers,
                     ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER));
+                    ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+            answersPanel.addKeyListener(new GridAssessmentKeyListener(this));
+            body.add(answersPanel);
             //body.add(answers);
             focusOrder.add(answers);
             final JTextPane comment = new JTextPane();
@@ -110,7 +138,9 @@ public class GridAssessmentPage extends javax.swing.JDialog {
                 final JLabel label = new JLabel("Comment on '" + descriptor.getId() + "'");
                 label.setLabelFor(comment);
                 body.add(label);
-                body.add(new JScrollPane(comment));
+                JScrollPane commentPanel = new JScrollPane(comment);
+                commentPanel.addKeyListener(new GridAssessmentKeyListener(this));
+                body.add(commentPanel);
             }
         }
         focusOrder.add(btnFinish);
@@ -137,6 +167,10 @@ public class GridAssessmentPage extends javax.swing.JDialog {
         this.setFocusTraversalPolicy(new MyFocusTraversalPolicy(focusOrder));
         this.setTitle("Assessing " + StringUtils.join(descriptors.iterator(), " and "));
 
+        //Adjust interface:
+        this.header.setFocusable(false);
+        this.body.setFocusable(false);
+        this.addKeyListener(new GridAssessmentKeyListener(this));
     }
 
     /** This method is called from within the constructor to

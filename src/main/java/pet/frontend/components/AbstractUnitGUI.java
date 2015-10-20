@@ -4,12 +4,16 @@
  */
 package pet.frontend.components;
 
+import java.awt.Color;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JTextPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 import pet.annotation.Segment;
 import pet.annotation.adapter.StringSentence;
-import pet.config.ContextHandler;
-import pet.signal.PETTextChangeEvent.Reason;
-import pet.usr.handler.UnitHandler;
 
 /**
  *
@@ -18,6 +22,7 @@ import pet.usr.handler.UnitHandler;
 public abstract class AbstractUnitGUI extends JTextPane implements UnitGUI {
 
     private static interface Handler {
+
         String tip(final String tip);
     }
 
@@ -35,7 +40,7 @@ public abstract class AbstractUnitGUI extends JTextPane implements UnitGUI {
                 return null;
             }
         });
-        
+
         private final Handler handler;
 
         Tip(final Handler handler) {
@@ -62,13 +67,21 @@ public abstract class AbstractUnitGUI extends JTextPane implements UnitGUI {
 
     protected void updateFacade() {
         super.setText(this.displaying.toString());
-        
+//        Highlighter highlighter = super.getHighlighter();
+//        HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.blue);
+//        try {
+//            highlighter.addHighlight(0, 5, painter);
+//        } catch (BadLocationException ex) {
+//            Logger.getLogger(AbstractUnitGUI.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+
         setCaretPosition(0);
         super.setToolTipText(this.tipHandler.get(this.displaying.getProducer()));
     }
 
     /**
      * Underlying JTextPane
+     *
      * @return
      */
     public JTextPane underlying() {
@@ -76,14 +89,13 @@ public abstract class AbstractUnitGUI extends JTextPane implements UnitGUI {
     }
 
     @Override
-    public UnitGUIType getType(){
+    public UnitGUIType getType() {
         return type;
     }
 
     @Override
-    public int getId(){
+    public int getId() {
         return id;
     }
 
-    
 }

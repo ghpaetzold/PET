@@ -19,8 +19,8 @@ autoSave=5
 
 # You may want to change the annotation page
 # how many sentences get displayed
-sentencesByPage=9
-editablePosition=1
+sentencesByPage=4
+editablePosition=0
 
 # hide the bottom pane to get more space
 hideBottomPane
@@ -47,7 +47,7 @@ assessmentsByPage=2
 #maximiseAssessmentPage
 
 # You can disable assessments switching on the following flag:
-disableAssessment
+# disableAssessment
 # Assessments come with optional comments, you may disable them
 #disableCommentOnAssessment
 

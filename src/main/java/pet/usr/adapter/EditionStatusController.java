@@ -185,8 +185,7 @@ public class EditionStatusController implements EditingStatusProvider {
         }
     }
 
-    public void done(final String translation,
-            final List<AssessmentChoice> assessments) {
+    public void done(final String translation, final List<AssessmentChoice> assessments) {
         
         clock.printing(false);
         clock.resetGettingTime();
