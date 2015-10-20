@@ -18,22 +18,25 @@ public class SearchManager {
 
     private WordSearchPage page;
     private String currentSearch;
-    private HashMap<Integer, SearchResult> searchMap;
+    private HashMap<Integer, SearchResult> srcSearchMap;
+    private HashMap<Integer, SearchResult> tgtSearchMap;
     private int first;
     private int last;
 
     public SearchManager(WordSearchPage wsp) {
         this.page = wsp;
         this.currentSearch = "";
-        this.searchMap = new HashMap<Integer, SearchResult>();
+        this.srcSearchMap = new HashMap<Integer, SearchResult>();
+        this.tgtSearchMap = new HashMap<Integer, SearchResult>();
         this.first = -1;
         this.last = -1;
     }
 
     public void getNext(String search) {
         //Update search if necessary:
-        if (!currentSearch.equals(search)) {
+        if (!currentSearch.equals(search) || this.page.getSettingsChanged()) {
             this.performSearch(search);
+            this.page.setSettingsChanged(false);
         }
 
         //Get current task in editing:
@@ -44,24 +47,34 @@ public class SearchManager {
         if (currentTask <= lastTask) {
             //Walk until fall off borders or find search entry:
             int i = currentTask + 1;
-            SearchResult result = this.searchMap.get(i);
-            while (i <= lastTask && result == null) {
+            SearchResult srcResult = this.srcSearchMap.get(i);
+            SearchResult tgtResult = this.srcSearchMap.get(i);
+            while (i <= lastTask && srcResult == null && tgtResult == null) {
                 i++;
-                result = this.searchMap.get(i);
+                srcResult = this.srcSearchMap.get(i);
+                tgtResult = this.tgtSearchMap.get(i);
             }
 
             //If none were found, move back to first if available:
-            if (result == null && this.searchMap.keySet().size() > 0) {
+            if (srcResult == null && tgtResult == null && (this.srcSearchMap.keySet().size() > 0 || this.tgtSearchMap.keySet().size() > 0)) {
                 int gap = -1 - currentTask;
                 this.moveAnnotationPage(gap);
                 currentTask = this.page.getAnnotationPage().getPool().getPointer();
                 i = this.first;
-                result = this.searchMap.get(i);
+                srcResult = this.srcSearchMap.get(i);
+                tgtResult = this.tgtSearchMap.get(i);
             }
 
             //If there are further successful searches, move panel in the annotation page:
-            if (result != null) {
-                this.page.updateResultsLabel("Found " + result.getIndexes().size() + " occurrences in task " + i + ".");
+            if (srcResult != null || tgtResult != null) {
+                int size = 0;
+                if (srcResult != null) {
+                    size += srcResult.getIndexes().size();
+                }
+                if (tgtResult != null) {
+                    size += tgtResult.getIndexes().size();
+                }
+                this.page.updateResultsLabel("Found " + size + " occurrences in task " + i + ".");
                 int gap = i - currentTask;
                 this.moveAnnotationPage(gap);
             } else {
@@ -72,8 +85,9 @@ public class SearchManager {
 
     public void getPrevious(String search) {
         //Update search if necessary:
-        if (!currentSearch.equals(search)) {
+        if (!currentSearch.equals(search) || this.page.getSettingsChanged()) {
             this.performSearch(search);
+            this.page.setSettingsChanged(false);
         }
 
         //Get current task in editing:
@@ -83,24 +97,34 @@ public class SearchManager {
         if (currentTask > -1) {
             //Walk until fall off borders or find search entry:
             int i = currentTask - 1;
-            SearchResult result = this.searchMap.get(i);
-            while (i >= 0 && result == null) {
+            SearchResult srcResult = this.srcSearchMap.get(i);
+            SearchResult tgtResult = this.srcSearchMap.get(i);
+            while (i >= 0 && srcResult == null && tgtResult == null) {
                 i--;
-                result = this.searchMap.get(i);
+                srcResult = this.srcSearchMap.get(i);
+                tgtResult = this.tgtSearchMap.get(i);
             }
 
             //If none were found, move back to first if available:
-            if (result == null && this.searchMap.keySet().size() > 0) {
+            if (srcResult == null && tgtResult == null && (this.srcSearchMap.keySet().size() > 0 || this.tgtSearchMap.keySet().size() > 0)) {
                 int gap = this.page.getAnnotationPage().getTasks().size() - currentTask;
                 this.moveAnnotationPage(gap);
                 currentTask = this.page.getAnnotationPage().getPool().getPointer();
                 i = this.last;
-                result = this.searchMap.get(i);
+                srcResult = this.srcSearchMap.get(i);
+                tgtResult = this.tgtSearchMap.get(i);
             }
 
             //If there are further successful searches, move panel in the annotation page:
-            if (result != null) {
-                this.page.updateResultsLabel("Found " + result.getIndexes().size() + " occurrences in task " + i + ".");
+            if (srcResult != null || tgtResult != null) {
+                int size = 0;
+                if (srcResult != null) {
+                    size += srcResult.getIndexes().size();
+                }
+                if (tgtResult != null) {
+                    size += tgtResult.getIndexes().size();
+                }
+                this.page.updateResultsLabel("Found " + size + " occurrences in task " + i + ".");
                 int gap = i - currentTask;
                 this.moveAnnotationPage(gap);
             } else {
@@ -111,8 +135,9 @@ public class SearchManager {
 
     public void getFirst(String search) {
         //Update search if necessary:
-        if (!currentSearch.equals(search)) {
+        if (!currentSearch.equals(search) || this.page.getSettingsChanged()) {
             this.performSearch(search);
+            this.page.setSettingsChanged(false);
         }
 
         //Get current task in editing:
@@ -121,8 +146,16 @@ public class SearchManager {
         //If there is at least one search result:
         if (this.first > -1) {
             //Get search result:
-            SearchResult result = this.searchMap.get(this.first);
-            this.page.updateResultsLabel("Found " + result.getIndexes().size() + " occurrences in task " + this.first + ".");
+            SearchResult srcResult = this.srcSearchMap.get(this.first);
+            SearchResult tgtResult = this.tgtSearchMap.get(this.first);
+            int size = 0;
+            if (srcResult != null) {
+                size += srcResult.getIndexes().size();
+            }
+            if (tgtResult != null) {
+                size += tgtResult.getIndexes().size();
+            }
+            this.page.updateResultsLabel("Found " + size + " occurrences in task " + this.first + ".");
             int gap = this.first - currentTask;
             this.moveAnnotationPage(gap);
         } else {
@@ -132,8 +165,9 @@ public class SearchManager {
 
     public void getLast(String search) {
         //Update search if necessary:
-        if (!currentSearch.equals(search)) {
+        if (!currentSearch.equals(search) || this.page.getSettingsChanged()) {
             this.performSearch(search);
+            this.page.setSettingsChanged(false);
         }
 
         //Get current task in editing:
@@ -142,8 +176,16 @@ public class SearchManager {
         //If there is at least one search result:
         if (this.last > -1) {
             //Get search result:
-            SearchResult result = this.searchMap.get(this.last);
-            this.page.updateResultsLabel("Found " + result.getIndexes().size() + " occurrences in task " + this.last + ".");
+            SearchResult srcResult = this.srcSearchMap.get(this.first);
+            SearchResult tgtResult = this.tgtSearchMap.get(this.first);
+            int size = 0;
+            if (srcResult != null) {
+                size += srcResult.getIndexes().size();
+            }
+            if (tgtResult != null) {
+                size += tgtResult.getIndexes().size();
+            }
+            this.page.updateResultsLabel("Found " + size + " occurrences in task " + this.last + ".");
             int gap = this.last - currentTask;
             this.moveAnnotationPage(gap);
         } else {
@@ -152,11 +194,16 @@ public class SearchManager {
     }
 
     private void performSearch(String search) {
-        //Reset map:
-        this.searchMap = new HashMap<Integer, SearchResult>();
+        //Reset maps:
+        this.srcSearchMap = new HashMap<Integer, SearchResult>();
+        this.tgtSearchMap = new HashMap<Integer, SearchResult>();
 
         //Update current search:
         this.currentSearch = search;
+
+        //Get search settings:
+        boolean searchSource = this.page.searchSource();
+        boolean searchTarget = this.page.searchTarget();
 
         //Get tasks to be searched over:
         List<EditableUnit> tasks = this.page.getAnnotationPage().getTasks();
@@ -164,26 +211,50 @@ public class SearchManager {
         //Perform searches:
         for (int i = 0; i < tasks.size(); i++) {
             //Get translations in their current state:
+            String source = tasks.get(i).getSource().toString();
             String translation = tasks.get(i).getEditing().toString();
 
             //Create array list of found indexes:
-            ArrayList<Integer> indexes = new ArrayList<Integer>();
-            int index = translation.indexOf(search);
-            while (index > -1) {
-                indexes.add(index);
-                index = translation.indexOf(search, index + 1);
+            ArrayList<Integer> srcIndexes = new ArrayList<Integer>();
+            if (searchSource) {
+                int index = source.indexOf(search);
+                while (index > -1) {
+                    srcIndexes.add(index);
+                    index = source.indexOf(search, index + 1);
+                }
+            }
+
+            //Create array list of found indexes:
+            ArrayList<Integer> tgtIndexes = new ArrayList<Integer>();
+            if (searchTarget) {
+                int index = translation.indexOf(search);
+                while (index > -1) {
+                    tgtIndexes.add(index);
+                    index = translation.indexOf(search, index + 1);
+                }
             }
 
             //Add results to search map:
-            if (indexes.size() > 0) {
-                this.searchMap.put(i, new SearchResult(indexes));
+            if (srcIndexes.size() > 0) {
+                this.srcSearchMap.put(i, new SearchResult(srcIndexes));
+            }
+            if (tgtIndexes.size() > 0) {
+                this.tgtSearchMap.put(i, new SearchResult(tgtIndexes));
             }
         }
 
         //Get first and last instances found:
         int min = 999999;
         int max = -999999;
-        for (Integer i : this.searchMap.keySet()) {
+        for (Integer i : this.srcSearchMap.keySet()) {
+            if (i < min) {
+                min = i;
+            }
+            if (i > max) {
+                max = i;
+            }
+        }
+        for (Integer i : this.tgtSearchMap.keySet()) {
             if (i < min) {
                 min = i;
             }
@@ -250,7 +321,7 @@ public class SearchManager {
         EditableUnit task = this.page.getAnnotationPage().getTasks().get(currentTask);
 
         //Check to see if there are matches in search map:
-        if (this.searchMap.get(currentTask) != null) {
+        if (this.tgtSearchMap.get(currentTask) != null) {
             //Get translations in their current state:
             String translation = task.getEditing().toString();
 
@@ -264,15 +335,23 @@ public class SearchManager {
 
             //Update map entry:
             if (indexes.size() > 0) {
-                this.searchMap.put(currentTask, new SearchResult(indexes));
+                this.tgtSearchMap.put(currentTask, new SearchResult(indexes));
             } else {
-                this.searchMap.remove(currentTask);
+                this.tgtSearchMap.remove(currentTask);
             }
 
             //Get first and last instances found:
             int min = 999999;
             int max = -999999;
-            for (Integer i : this.searchMap.keySet()) {
+            for (Integer i : this.srcSearchMap.keySet()) {
+                if (i < min) {
+                    min = i;
+                }
+                if (i > max) {
+                    max = i;
+                }
+            }
+            for (Integer i : this.tgtSearchMap.keySet()) {
                 if (i < min) {
                     min = i;
                 }
@@ -293,8 +372,12 @@ public class SearchManager {
         }
     }
 
-    public SearchResult getSearchResult(int i) {
-        return this.searchMap.get(i);
+    public SearchResult getSourceSearchResult(int i) {
+        return this.srcSearchMap.get(i);
+    }
+
+    public SearchResult getTargetSearchResult(int i) {
+        return this.tgtSearchMap.get(i);
     }
 
     /**

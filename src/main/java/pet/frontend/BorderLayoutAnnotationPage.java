@@ -519,6 +519,16 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 src.addMouseListener(activeSrcMenu);
                 tgt.addMouseListener(activeTgtMenu);
 
+                KeyAdapter keyListener = new java.awt.event.KeyAdapter() {
+                    @Override
+                    public void keyPressed(java.awt.event.KeyEvent evt) {
+                        toolbarKeyPressed(evt);
+                    }
+                };
+                
+                src.addKeyListener(keyListener);
+                tgt.addKeyListener(keyListener);
+
                 tgt.setTransferHandler(dragAndDropHandler);
                 tgt.setDragEnabled(true);
 
@@ -1461,27 +1471,46 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void highlightEditableUnit() {
         //Get editable unit:
-        AbstractUnitGUI editable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(2);
+        AbstractUnitGUI srcEditable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(1);
+        AbstractUnitGUI tgtEditable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(2);
 
         //Get search results from map:
-        SearchResult result = this.wsp.getSearchManager().getSearchResult(this.pool.getPointer());
+        SearchResult srcResult = this.wsp.getSearchManager().getSourceSearchResult(this.pool.getPointer());
+        SearchResult tgtResult = this.wsp.getSearchManager().getTargetSearchResult(this.pool.getPointer());
 
         //Get current search:
         String search = this.wsp.getSearchManager().getCurrentSearch();
 
-        //Get highlighter:
-        Highlighter highlighter = editable.getHighlighter();
-        Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+        //Get highlighters:
+        Highlighter srcHighlighter = srcEditable.getHighlighter();
+        Highlighter.HighlightPainter srcPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+        Highlighter tgtHighlighter = tgtEditable.getHighlighter();
+        Highlighter.HighlightPainter tgtPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
 
-        //If there are search results, highlight them:
-        if (result != null) {
+        //If there are source search results, highlight them:
+        if (srcResult != null) {
             //Get occurrence indexes:
-            ArrayList<Integer> indexes = result.getIndexes();
+            ArrayList<Integer> indexes = srcResult.getIndexes();
 
             //Higlight each occurrence:
             for (Integer i : indexes) {
                 try {
-                    highlighter.addHighlight(i, i + search.length(), painter);
+                    srcHighlighter.addHighlight(i, i + search.length(), srcPainter);
+                } catch (BadLocationException ex) {
+                    Logger.getLogger(SearchManager.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        
+        //If there are target search results, highlight them:
+        if (tgtResult != null) {
+            //Get occurrence indexes:
+            ArrayList<Integer> indexes = tgtResult.getIndexes();
+
+            //Higlight each occurrence:
+            for (Integer i : indexes) {
+                try {
+                    tgtHighlighter.addHighlight(i, i + search.length(), tgtPainter);
                 } catch (BadLocationException ex) {
                     Logger.getLogger(SearchManager.class.getName()).log(Level.SEVERE, null, ex);
                 }

@@ -38,20 +38,38 @@
       <Layout>
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
-              <Group type="102" alignment="0" attributes="0">
+              <Group type="102" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="resultsLabel" max="32767" attributes="0"/>
                       <Component id="searchField" max="32767" attributes="0"/>
-                      <Component id="searchLabel" min="-2" max="-2" attributes="0"/>
-                      <Group type="102" alignment="0" attributes="0">
-                          <Component id="previousButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="nextButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="firstButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="lastButton" min="-2" max="-2" attributes="0"/>
+                      <Component id="resultsLabel" alignment="0" max="32767" attributes="0"/>
+                      <Group type="102" attributes="0">
+                          <Group type="103" groupAlignment="0" attributes="0">
+                              <Group type="102" attributes="0">
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="searchLabel" min="-2" max="-2" attributes="0"/>
+                                      <Component id="targetsLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="sourceCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="targetCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                                  <EmptySpace min="-2" pref="81" max="-2" attributes="0"/>
+                                  <Group type="103" groupAlignment="0" attributes="0">
+                                      <Component id="optionsLabel" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="fullCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                                      <Component id="caseCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
+                                  </Group>
+                              </Group>
+                              <Group type="102" alignment="0" attributes="0">
+                                  <Component id="previousButton" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="nextButton" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="firstButton" min="-2" max="-2" attributes="0"/>
+                                  <EmptySpace max="-2" attributes="0"/>
+                                  <Component id="lastButton" min="-2" max="-2" attributes="0"/>
+                              </Group>
+                          </Group>
+                          <EmptySpace min="0" pref="28" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                   <EmptySpace max="-2" attributes="0"/>
@@ -67,13 +85,28 @@
                   <Component id="searchField" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="targetsLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="optionsLabel" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="sourceCheckBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="caseCheckBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
+                      <Component id="targetCheckBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="fullCheckBox" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="previousButton" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="nextButton" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="firstButton" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="lastButton" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace max="-2" attributes="0"/>
-                  <Component id="resultsLabel" pref="14" max="32767" attributes="0"/>
+                  <EmptySpace max="32767" attributes="0"/>
+                  <Component id="resultsLabel" min="-2" pref="16" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
@@ -124,6 +157,48 @@
           </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="resultsLabel">
+        </Component>
+        <Component class="javax.swing.JLabel" name="targetsLabel">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Targets:"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="sourceCheckBox">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Source"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="sourceCheckBoxActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="targetCheckBox">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Target"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="targetCheckBoxActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JLabel" name="optionsLabel">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Options:"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="caseCheckBox">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Case-Insensitive"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="caseCheckBoxActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JCheckBox" name="fullCheckBox">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Full Match"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="fullCheckBoxActionPerformed"/>
+          </Events>
         </Component>
       </SubComponents>
     </Container>
