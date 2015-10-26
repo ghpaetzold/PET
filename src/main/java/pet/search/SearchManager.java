@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
@@ -214,23 +216,51 @@ public class SearchManager {
             String source = tasks.get(i).getSource().toString();
             String translation = tasks.get(i).getEditing().toString();
 
+            //If lowercase required, format sentences:
+            if (this.page.getCaseInsensitive()) {
+                source = source.toLowerCase();
+                translation = translation.toLowerCase();
+            }
+
             //Create array list of found indexes:
             ArrayList<Integer> srcIndexes = new ArrayList<Integer>();
             if (searchSource) {
-                int index = source.indexOf(search);
-                while (index > -1) {
-                    srcIndexes.add(index);
-                    index = source.indexOf(search, index + 1);
+                if (!this.page.getFullMatch()) {
+                    int index = source.indexOf(search);
+                    while (index > -1) {
+                        srcIndexes.add(index);
+                        index = source.indexOf(search, index + 1);
+                    }
+                } else {
+                    String[] tokens = source.split(" ");
+                    int cindex = 0;
+                    for(String token: tokens){
+                        if(token.equals(search)){
+                            srcIndexes.add(cindex);
+                        }
+                        cindex += token.length() + 1;
+                    }
                 }
             }
 
             //Create array list of found indexes:
             ArrayList<Integer> tgtIndexes = new ArrayList<Integer>();
             if (searchTarget) {
-                int index = translation.indexOf(search);
-                while (index > -1) {
-                    tgtIndexes.add(index);
-                    index = translation.indexOf(search, index + 1);
+                if (!this.page.getFullMatch()) {
+                    int index = translation.indexOf(search);
+                    while (index > -1) {
+                        tgtIndexes.add(index);
+                        index = translation.indexOf(search, index + 1);
+                    }
+                } else {
+                    String[] tokens = translation.split(" ");
+                    int cindex = 0;
+                    for(String token: tokens){
+                        if(token.equals(search)){
+                            tgtIndexes.add(cindex);
+                        }
+                        cindex += token.length() + 1;
+                    }
                 }
             }
 

@@ -519,16 +519,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 src.addMouseListener(activeSrcMenu);
                 tgt.addMouseListener(activeTgtMenu);
 
-                KeyAdapter keyListener = new java.awt.event.KeyAdapter() {
-                    @Override
-                    public void keyPressed(java.awt.event.KeyEvent evt) {
-                        toolbarKeyPressed(evt);
-                    }
-                };
-                
-                src.addKeyListener(keyListener);
-                tgt.addKeyListener(keyListener);
-
                 tgt.setTransferHandler(dragAndDropHandler);
                 tgt.setDragEnabled(true);
 
@@ -674,8 +664,8 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                                 btnCopyContext.doClick();
                             }
                         });
-                inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A,
-                        Event.ALT_MASK), new AbstractAction() {
+                inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN,
+                        Event.CTRL_MASK), new AbstractAction() {
 
                             public void actionPerformed(ActionEvent ae) {
                                 if (btnAcceptMT.isEnabled()) {
@@ -705,6 +695,15 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                             public void actionPerformed(ActionEvent ae) {
                                 btnBind.doClick();
                                 editingTgt.underlying().requestFocus();
+                            }
+                        });
+                inMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                        Event.CTRL_MASK), new AbstractAction() {
+
+                            public void actionPerformed(ActionEvent ae) {
+                                wsp.setFocusable(true);
+                                wsp.setFocusableWindowState(true);
+                                wsp.setVisible(true);
                             }
                         });
 
@@ -1079,6 +1078,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             if (notches < 0) {
                 btnPrevious.doClick();
             } else { //down
+                System.out.println("Maybe...");
                 btnNext.doClick();
             }
         }
@@ -1090,6 +1090,13 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 wsp.setFocusable(true);
                 wsp.setFocusableWindowState(true);
                 wsp.setVisible(true);
+            }
+            if (evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                if (btnAcceptMT.isEnabled()) {
+                    System.out.println("HOW FUCKING CUTE");
+                    btnAcceptMT.requestFocusInWindow();
+                    btnAcceptMT.doClick();
+                }
             }
         } else {
             if (evt.getKeyCode() == KeyEvent.VK_I) {
@@ -1113,11 +1120,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             if (evt.getKeyCode() == KeyEvent.VK_C) {
                 if (btnCopyContext.isEnabled()) {
                     btnCopyContext.doClick();
-                }
-            }
-            if (evt.getKeyCode() == KeyEvent.VK_A) {
-                if (btnAcceptMT.isEnabled()) {
-                    btnAcceptMT.doClick();
                 }
             }
             if (evt.getKeyCode() == KeyEvent.VK_R) {
@@ -1165,7 +1167,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     }
 
     private void btnAcceptMTActionPerformed(java.awt.event.ActionEvent evt) {
-
         final DateTime beforeAssessing = new DateTime(System.currentTimeMillis());
         final EditableUnit editing = statusController.getEditingTask();
         if (editing != null) {
@@ -1468,7 +1469,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     public int getEditablePosition() {
         return editablePosition;
     }
-
+    
     private void highlightEditableUnit() {
         //Get editable unit:
         AbstractUnitGUI srcEditable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(1);
@@ -1501,7 +1502,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 }
             }
         }
-        
+
         //If there are target search results, highlight them:
         if (tgtResult != null) {
             //Get occurrence indexes:

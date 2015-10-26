@@ -39,8 +39,10 @@ public class WordSearchPage extends javax.swing.JFrame {
         public void keyReleased(KeyEvent e) {
             if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                 this.page.dispose();
-            } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
                 this.page.nextButton.doClick();
+            } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                this.page.previousButton.doClick();
             }
         }
     }
@@ -132,13 +134,16 @@ public class WordSearchPage extends javax.swing.JFrame {
             search = search.toLowerCase();
         }
         
-        //If full match has been requested, format search query:
-        if(this.fullCheckBox.isSelected()){
-            search = " " + search.trim() + " ";
-        }
-        
         //Return resulting query:
         return search;
+    }
+    
+    public boolean getCaseInsensitive(){
+        return this.caseCheckBox.isSelected();
+    }
+    
+    public boolean getFullMatch(){
+        return this.fullCheckBox.isSelected();
     }
 
     @SuppressWarnings("unchecked")
@@ -326,7 +331,7 @@ public class WordSearchPage extends javax.swing.JFrame {
 
     private void previousButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousButtonActionPerformed
         //Get value being searched:
-        String search = this.searchField.getText();
+        String search = this.getSearchFieldContent();
 
         //Update search:
         this.getSearchManager().getPrevious(search);
@@ -338,7 +343,7 @@ public class WordSearchPage extends javax.swing.JFrame {
 
     private void firstButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_firstButtonActionPerformed
         //Get value being searched:
-        String search = this.searchField.getText();
+        String search = this.getSearchFieldContent();
 
         //Update search:
         this.getSearchManager().getFirst(search);
@@ -346,7 +351,7 @@ public class WordSearchPage extends javax.swing.JFrame {
 
     private void lastButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_lastButtonActionPerformed
         //Get value being searched:
-        String search = this.searchField.getText();
+        String search = this.getSearchFieldContent();
 
         //Update search:
         this.getSearchManager().getLast(search);
@@ -354,18 +359,22 @@ public class WordSearchPage extends javax.swing.JFrame {
 
     private void caseCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_caseCheckBoxActionPerformed
         this.settingsChanged = true;
+        this.requestFocus();
     }//GEN-LAST:event_caseCheckBoxActionPerformed
 
     private void sourceCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sourceCheckBoxActionPerformed
         this.settingsChanged = true;
+        this.requestFocus();
     }//GEN-LAST:event_sourceCheckBoxActionPerformed
 
     private void targetCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_targetCheckBoxActionPerformed
         this.settingsChanged = true;
+        this.requestFocus();
     }//GEN-LAST:event_targetCheckBoxActionPerformed
 
     private void fullCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fullCheckBoxActionPerformed
         this.settingsChanged = true;
+        this.requestFocus();
     }//GEN-LAST:event_fullCheckBoxActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
