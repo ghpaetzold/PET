@@ -24,7 +24,7 @@ public class PETNavigationEvent extends PETAbstractEvent{
         UP,
         DOWN,
         LEFT,
-        RIGHT       
+        RIGHT
     }
     
     private final NavigationType command;

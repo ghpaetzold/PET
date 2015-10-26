@@ -1326,6 +1326,9 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                 case KeyEvent.VK_Y:
                     ContextHandler.signalManager().fire(new PETCommandEvent(PETCommandEvent.CommandType.REDO, offset));
                     break;
+                case KeyEvent.VK_F:
+                    ContextHandler.signalManager().fire(new PETCommandEvent(PETCommandEvent.CommandType.SEARCH, offset));
+                    break;
             }
         } else {
             switch (evt.getKeyCode()) {
@@ -1352,9 +1355,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                     break;
                 case KeyEvent.VK_PAGE_UP:
                     ContextHandler.signalManager().fire(new PETNavigationEvent(PETNavigationEvent.NavigationType.PGUP, offset));
-                    break;
-                case KeyEvent.VK_ENTER:
-                    this.btnNext.doClick();
                     break;
             }
         }

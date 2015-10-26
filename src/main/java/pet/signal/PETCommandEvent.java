@@ -23,7 +23,8 @@ public class PETCommandEvent extends PETAbstractEvent{
         DELETE,
         BACKSPACE,
         UNDO,
-        REDO
+        REDO,
+        SEARCH
     }
     
     private final CommandType command;
