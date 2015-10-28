@@ -1213,8 +1213,19 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void btnPreviousLastActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-        while (this.getPool().getPointer() != 0) {
-            move(false, false);
+        int pointer = this.getPool().getPointer();
+        int gap = 0 - pointer;
+        
+        //If gap is positive, move annotation interface further:
+        if (gap > 0) {
+            for (int i = 0; i < gap; i++) {
+                this.move(true, true);
+            }
+            //If gap is negative, move annotation interface backwards:
+        } else if (gap < 0) {
+            for (int i = 0; i < -1 * gap; i++) {
+                this.move(false, true);
+            }
         }
         btnPreviousLast.requestFocus();
     }
