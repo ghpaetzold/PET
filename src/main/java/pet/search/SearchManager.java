@@ -12,6 +12,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.Highlighter.HighlightPainter;
+import pet.annotation.adapter.StatusAdapter;
+import pet.config.ContextHandler;
 import pet.frontend.WordSearchPage;
 import pet.frontend.components.AbstractUnitGUI;
 import pet.usr.adapter.EditableUnit;
@@ -50,7 +52,7 @@ public class SearchManager {
             //Walk until fall off borders or find search entry:
             int i = currentTask + 1;
             SearchResult srcResult = this.srcSearchMap.get(i);
-            SearchResult tgtResult = this.srcSearchMap.get(i);
+            SearchResult tgtResult = this.tgtSearchMap.get(i);
             while (i <= lastTask && srcResult == null && tgtResult == null) {
                 i++;
                 srcResult = this.srcSearchMap.get(i);
@@ -100,7 +102,7 @@ public class SearchManager {
             //Walk until fall off borders or find search entry:
             int i = currentTask - 1;
             SearchResult srcResult = this.srcSearchMap.get(i);
-            SearchResult tgtResult = this.srcSearchMap.get(i);
+            SearchResult tgtResult = this.tgtSearchMap.get(i);
             while (i >= 0 && srcResult == null && tgtResult == null) {
                 i--;
                 srcResult = this.srcSearchMap.get(i);
@@ -212,9 +214,20 @@ public class SearchManager {
 
         //Perform searches:
         for (int i = 0; i < tasks.size(); i++) {
+            //Get task:
+            EditableUnit task = tasks.get(i);
+            
+            //Check to see if task should be searched:
+            boolean searchTask = true;
+            if (!"never".equals(ContextHandler.hideIfNotEditing())){
+                if(!task.getStatus().equals(StatusAdapter.FINISHED)){
+                    searchTask = false;
+                }
+            }
+            
             //Get translations in their current state:
-            String source = tasks.get(i).getSource().toString();
-            String translation = tasks.get(i).getEditing().toString();
+            String source = task.getSource().toString();
+            String translation = task.getEditing().toString();
 
             //If lowercase required, format sentences:
             if (this.page.getCaseInsensitive()) {
@@ -224,7 +237,7 @@ public class SearchManager {
 
             //Create array list of found indexes:
             ArrayList<Integer> srcIndexes = new ArrayList<Integer>();
-            if (searchSource) {
+            if (searchSource && searchTask) {
                 if (!this.page.getFullMatch()) {
                     int index = source.indexOf(search);
                     while (index > -1) {
@@ -245,7 +258,7 @@ public class SearchManager {
 
             //Create array list of found indexes:
             ArrayList<Integer> tgtIndexes = new ArrayList<Integer>();
-            if (searchTarget) {
+            if (searchTarget && searchTask) {
                 if (!this.page.getFullMatch()) {
                     int index = translation.indexOf(search);
                     while (index > -1) {

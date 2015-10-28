@@ -1490,7 +1490,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         Highlighter.HighlightPainter tgtPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
 
         //If there are source search results, highlight them:
-        if (srcResult != null && "never".equals(ContextHandler.hideIfNotEditing())) {
+        if (srcResult != null) {
             //Get occurrence indexes:
             ArrayList<Integer> indexes = srcResult.getIndexes();
 
@@ -1505,14 +1505,13 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         }
 
         //If there are target search results, highlight them:
-        if (tgtResult != null && "never".equals(ContextHandler.hideIfNotEditing())) {
+        if (tgtResult != null) {
             //Get occurrence indexes:
             ArrayList<Integer> indexes = tgtResult.getIndexes();
 
             //Higlight each occurrence:
             for (Integer i : indexes) {
                 try {
-                    System.out.println("I: " + i + ", Length: " + search.length());
                     tgtHighlighter.addHighlight(i, i + search.length(), tgtPainter);
                 } catch (BadLocationException ex) {
                     Logger.getLogger(SearchManager.class.getName()).log(Level.SEVERE, null, ex);
