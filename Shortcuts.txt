@@ -1,0 +1,21 @@
+Shortcuts:
+
+	Annotation Window:
+		UP: Move to previous task.
+		DOWN: Move to next task.
+		Ctrl+DOWN: Accept original translation and move to next task.
+		Alt+UP: Move to previous task while in editing mode.
+		Alt+DOWN: Move to next task while in editing mode.
+		HOME: Move to first task.
+		END: Move to next unedited task.
+		Ctrl+F: Open search box.
+		
+	Assessment Window:
+		ENTER: Accept the assessment and close the window.
+	
+	Search Window:
+		ESC: Close search window.
+		LEFT: Move to previous task with a match.
+		RIGHT: Move to next task with a match.
+		Ctrl+LEFT: Move to first task with a match.
+		Ctrl+RIGHT: Move to last task with a match.

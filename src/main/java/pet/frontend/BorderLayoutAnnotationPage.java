@@ -671,6 +671,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
                                 if (btnAcceptMT.isEnabled()) {
                                     btnNext.requestFocusInWindow();
                                     btnAcceptMT.doClick();
+
                                 }
                             }
                         });
@@ -746,13 +747,13 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         btnBind.setToolTipText("Bind source-target scrolling (B)");
 
         btnNext.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/down.png"))); // NOI18N
-        btnNext.setToolTipText("Next task (DOWN)");
+        btnNext.setToolTipText("Next task ([Alt+]DOWN)");
         btnPrevious.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/up.png"))); // NOI18N
-        btnPrevious.setToolTipText("Previous task (UP)");
+        btnPrevious.setToolTipText("Previous task ([Alt+]UP)");
         btnNextUndone.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/down last.png"))); // NOI18N
         btnNextUndone.setToolTipText("Find next undone task (END)");
         btnPreviousLast.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/up last.png"))); // NOI18N
-        btnPreviousLast.setToolTipText("Find previous undone task (HOME)");
+        btnPreviousLast.setToolTipText("Move to first task (HOME)");
         btnSave.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/save.gif"))); // NOI18N
         btnSave.setToolTipText("Save (F10)");
         btnClose.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/quit.png"))); // NOI18N
@@ -761,7 +762,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         btnCopyContext.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/copy.gif")));
         btnCopyContext.setToolTipText("Copy text from the top box to the editing box (C)");
         btnAcceptMT.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/accept2.png")));
-        btnAcceptMT.setToolTipText("Accept the MT (A)");
+        btnAcceptMT.setToolTipText("Accept the MT (Ctrl+DOWN)");
         btnRevert.setIcon(new javax.swing.ImageIcon(getClass().getResource("/rendering/icons/copy.png")));
         btnRevert.setToolTipText("Revert to last revision (R)");
 
@@ -1078,7 +1079,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             if (notches < 0) {
                 btnPrevious.doClick();
             } else { //down
-                System.out.println("Maybe...");
                 btnNext.doClick();
             }
         }
@@ -1093,7 +1093,6 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             }
             if (evt.getKeyCode() == KeyEvent.VK_DOWN) {
                 if (btnAcceptMT.isEnabled()) {
-                    System.out.println("HOW FUCKING CUTE");
                     btnAcceptMT.requestFocusInWindow();
                     btnAcceptMT.doClick();
                 }
@@ -1214,7 +1213,9 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void btnPreviousLastActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
-        move(false, false);
+        while (this.getPool().getPointer() != 0) {
+            move(false, false);
+        }
         btnPreviousLast.requestFocus();
     }
 
@@ -1469,7 +1470,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
     public int getEditablePosition() {
         return editablePosition;
     }
-    
+
     private void highlightEditableUnit() {
         //Get editable unit:
         AbstractUnitGUI srcEditable = (AbstractUnitGUI) this.alignments.get(this.editablePosition).getKey(1);
@@ -1489,7 +1490,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         Highlighter.HighlightPainter tgtPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
 
         //If there are source search results, highlight them:
-        if (srcResult != null) {
+        if (srcResult != null && "never".equals(ContextHandler.hideIfNotEditing())) {
             //Get occurrence indexes:
             ArrayList<Integer> indexes = srcResult.getIndexes();
 
@@ -1504,13 +1505,14 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         }
 
         //If there are target search results, highlight them:
-        if (tgtResult != null) {
+        if (tgtResult != null && "never".equals(ContextHandler.hideIfNotEditing())) {
             //Get occurrence indexes:
             ArrayList<Integer> indexes = tgtResult.getIndexes();
 
             //Higlight each occurrence:
             for (Integer i : indexes) {
                 try {
+                    System.out.println("I: " + i + ", Length: " + search.length());
                     tgtHighlighter.addHighlight(i, i + search.length(), tgtPainter);
                 } catch (BadLocationException ex) {
                     Logger.getLogger(SearchManager.class.getName()).log(Level.SEVERE, null, ex);

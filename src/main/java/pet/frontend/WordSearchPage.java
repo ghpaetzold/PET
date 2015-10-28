@@ -37,12 +37,20 @@ public class WordSearchPage extends javax.swing.JFrame {
 
         @Override
         public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                this.page.dispose();
-            } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                this.page.nextButton.doClick();
-            } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                this.page.previousButton.doClick();
+            if (e.isControlDown()) {
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    this.page.lastButton.doClick();
+                } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    this.page.firstButton.doClick();
+                }
+            } else {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    this.page.dispose();
+                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    this.page.nextButton.doClick();
+                } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    this.page.previousButton.doClick();
+                }
             }
         }
     }
@@ -70,6 +78,12 @@ public class WordSearchPage extends javax.swing.JFrame {
         this.addKeyListener(pageListener);
         this.setAlwaysOnTop(true);
         this.setResizable(false);
+
+        //Set tooltip texts:
+        this.nextButton.setToolTipText("Move to next task with a match (RIGHT)");
+        this.previousButton.setToolTipText("Move to previous task with a match (LEFT)");
+        this.lastButton.setToolTipText("Move to last task with a match (Ctrl+RIGHT)");
+        this.firstButton.setToolTipText("Move to first task with a match (Ctrl+LEFT)");
 
         //Create search manager:
         this.manager = new SearchManager(this);
@@ -128,21 +142,21 @@ public class WordSearchPage extends javax.swing.JFrame {
     private String getSearchFieldContent() {
         //Get raw string from search field:
         String search = this.searchField.getText();
-        
+
         //If lowercasing has been requested, format search query:
-        if(this.caseCheckBox.isSelected()){
+        if (this.caseCheckBox.isSelected()) {
             search = search.toLowerCase();
         }
-        
+
         //Return resulting query:
         return search;
     }
-    
-    public boolean getCaseInsensitive(){
+
+    public boolean getCaseInsensitive() {
         return this.caseCheckBox.isSelected();
     }
-    
-    public boolean getFullMatch(){
+
+    public boolean getFullMatch() {
         return this.fullCheckBox.isSelected();
     }
 
