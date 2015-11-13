@@ -456,7 +456,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         final MouseWheelListener mouseWheelListener = new java.awt.event.MouseWheelListener() {
 
             public void mouseWheelMoved(MouseWheelEvent mwe) {
-                tookbarMouseWheelMoved(mwe);
+                toolbarMouseWheelMoved(mwe);
             }
         };
         idPanel.addMouseWheelListener(mouseWheelListener);
@@ -514,6 +514,9 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
             id.setVisible(showId);
             src.setTransferHandler(dragHandler);
             src.setDragEnabled(true);
+            
+            src.addMouseWheelListener(mouseWheelListener);
+            tgt.addMouseWheelListener(mouseWheelListener);
 
             if (i == getEditablePosition()) {
                 src.addMouseListener(activeSrcMenu);
@@ -788,7 +791,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         final MouseWheelListener mouseWheelListener = new java.awt.event.MouseWheelListener() {
 
             public void mouseWheelMoved(MouseWheelEvent mwe) {
-                tookbarMouseWheelMoved(mwe);
+                toolbarMouseWheelMoved(mwe);
             }
         };
 
@@ -1073,7 +1076,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         lblSaving.setText("<html>" + lastSave + " saved<br>" + new DateTime(System.currentTimeMillis()).toString("hh:mm:ss") + "</html>");
     }
 
-    private void tookbarMouseWheelMoved(final MouseWheelEvent evt) {
+    private void toolbarMouseWheelMoved(final MouseWheelEvent evt) {
         if (!statusController.getEditionStatus().equals(EditionStatus.EDITING)) {
             int notches = evt.getWheelRotation();
             if (notches < 0) {
@@ -1215,7 +1218,7 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
         // TODO add your handling code here:
         int pointer = this.getPool().getPointer();
         int gap = 0 - pointer;
-        
+
         //If gap is positive, move annotation interface further:
         if (gap > 0) {
             for (int i = 0; i < gap; i++) {
