@@ -931,8 +931,8 @@ public class BorderLayoutAnnotationPage extends javax.swing.JFrame implements Bi
 
     private void getAssessment(final EditableUnit snapshot) {
         ContextHandler.signalManager().fire(new PETFlowEvent(PETFlowEvent.ActionType.EDITING_END));
-
-        if (ContextHandler.assessing()) {
+        
+        if (ContextHandler.assessing() && snapshot.getUnitResults().isEmpty()) {
             ContextHandler.signalManager().fire(new PETFlowEvent(PETFlowEvent.ActionType.ASSESSING_START));
             assessments = new ArrayList<AssessmentChoice>();
             final int assessmentsByPage = ContextHandler.assessmentsByPage();
