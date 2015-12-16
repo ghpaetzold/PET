@@ -10,6 +10,7 @@ import collections
 from xml.dom.minidom import parse as xml_parse
 from HTMLParser import HTMLParser
 import sys
+from bs4 import BeautifulSoup
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -48,7 +49,8 @@ def parse_html_text(element):
     # clean HTML tags
     # clean extra spaces
     # unescape HTML codes
-    return HTMLParser().unescape(' '.join(clean_html(' '.join(rc)).split()))
+    return ' '.join(BeautifulSoup(' '.join(rc), 'html.parser').get_text().split())
+    #return HTMLParser().unescape(' '.join(clean_html(' '.join(rc)).split()))
 
 def parse_attr(element, attr):
     return element.getAttribute(attr).encode('utf-8')
