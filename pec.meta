@@ -1,2 +1,2 @@
-dir=demo_qt21
-default=exp.pec
+dir=example\demo
+default=example\demo.pec
